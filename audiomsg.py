@@ -6,9 +6,7 @@ import os
 
 ACCESS_TOKEN = ""
 
-vk_session = vk_api.VkApi(token=ACCESS_TOKEN)
-vk = vk_session.get_api()
-upload = vk_api.upload.VkUpload(vk)
+vk = upload = None
 
 def sendAudio(peer_id, files):
     print("Отправка в:", peer_id)
