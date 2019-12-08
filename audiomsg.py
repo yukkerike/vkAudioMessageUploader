@@ -63,10 +63,14 @@ def authorize(ACCESS_TOKEN):
 
 def isToken(s):
     try:
-        int(s,16)
-        return True
-    except ValueError:
+        int(s)
         return False
+    except ValueError:
+        try:
+            int(s,16)
+            return True
+        except ValueError:
+            return False
 
 
 def isFile(s):
