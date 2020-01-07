@@ -102,19 +102,18 @@ def searchForId(s):
         if i['conversation']['peer']['type'] == "user" or i['conversation']['peer']['type'] == "group":
             conversations[i['conversation']['peer']['id']]=""
         elif i['conversation']['peer']['type'] == "chat":
-            conversations[i['conversation']['peer']['id']]=i['conversation']['chat_settings']['title']
+            conversations[i['conversation']['peer']['id']]=i['conversation']['chat_settings']['title'].lower()
     for i in p:
         if i['id'] in conversations:
-            conversations[i['id']] = i['first_name'] + " " + i['last_name']
+            conversations[i['id']] = (i['first_name'] + " " + i['last_name']).lower()
     for i in g:
         if -i['id'] in conversations:
-            conversations[-i['id']] = i['name']
-    conversations = {j.lower(): i for i, j in conversations.items()}
+            conversations[-i['id']] = i['name'].lower()
     count = 0
     peer_id = 0
     for i, j in conversations.items():
-        if i.find(s) != -1:
-            peer_id = j
+        if j.find(s) != -1:
+            peer_id = i
             count += 1
     if count == 0:
         return False
