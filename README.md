@@ -6,7 +6,7 @@
 
 > [python 3.4](https://python.org/) или новее
 
-    $ git clone https://github.com/ikozlovsky/vkAudioMessageUploader.git
+    $ git clone https://github.com/yukkerike/vkAudioMessageUploader.git
     $ cd vkAudioMessageUploader
     $ pip3 install -r requirements.txt
 

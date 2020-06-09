@@ -11,10 +11,24 @@ vk = upload = None
 def sendAudio(peer_id, files):
     print("Отправка в:", peer_id)
     audio_ids = []
+    files_count = len(files)
+    success_count = 0
+    print(f'Загрузка [0/{files_count}]', end='')
+    symbols_to_flush = len(str(files_count))+3
     for i in files:
+        success_count+=1
+        print('\b'*symbols_to_flush+f'{success_count}/{files_count}]', end='', flush=True)
         re = upload.audio_message(i)['audio_message']
         audio_ids.append("doc" + str(re['owner_id']) + "_" + str(re['id']))
+        symbols_to_flush = len(str(success_count)+str(files_count))+2
+    print()
+    audios_count = len(audio_ids)
+    success_count = 0
+    print(f'Отправка [0/{audios_count}]', end='')
+    symbols_to_flush = len(str(audios_count))+3   
     for i in audio_ids:
+        success_count+=1
+        print('\b'*symbols_to_flush+f'{success_count}/{files_count}]', end='', flush=True)
         while True:
             try:
                 vk.messages.send(peer_id=peer_id, attachment=i,random_id=random.getrandbits(64))
@@ -22,7 +36,9 @@ def sendAudio(peer_id, files):
                 time.sleep(2)
                 continue
             break
+        symbols_to_flush = len(str(success_count)+str(files_count))+2
         time.sleep(0.7)
+    print()
 
 def parseArgs(args):
     searchSequence = ""
