@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import vk_api
 import sys
 import random
