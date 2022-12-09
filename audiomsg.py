@@ -49,17 +49,14 @@ def parseArgs(args):
     if args[0].find(".py"):
         args=args[1:]
     for i in args:
-        if isToken(i):
+        if getID(i):
+            peer_id = getID(i)
+        elif isToken(i):
             authorize(i)
-        elif isID(i):
-            peer_id = i
         elif isFile(i):
             files.append(i)
         else:
-            if i[0] == "@":
-                peer_id = 2000000000 + int(i[1:])
-            else:
-                searchSequence += i + " "
+            searchSequence += i + " "
     searchSequence = searchSequence[:-1]
     if searchSequence and not peer_id:
         peer_id = searchForId(searchSequence)
@@ -81,25 +78,23 @@ def authorize(ACCESS_TOKEN):
 
 def isToken(s):
     try:
-        int(s)
-        return False
+        int(s,16)
+        return True
     except ValueError:
-        try:
-            int(s,16)
+        if s.find("vk") == 0:
             return True
-        except ValueError:
-            return False
-
+    return False
 
 def isFile(s):
     return os.path.isfile(s)
 
-def isID(s):
+def getID(s):
     try:
-        int(s)
-        return True
+        if s[0] == "@":
+            return int(s[1:]) + 2000000000
+        return int(s)
     except ValueError:
-        return False
+        return
 
 def searchForId(s):
     s = s.lower()
