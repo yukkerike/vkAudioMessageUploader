@@ -40,7 +40,7 @@ def send_audio(peer_id: int, files: list[str]) -> None:
     for i, audio_id in enumerate(audio_ids):
         success_count += 1
         print("\b" * symbols_to_flush + f"{success_count}/{files_count}]", end="", flush=True)
-        debounce(lambda p, a: vk.messages.send(peer_id=p, attachment=a, random_id=random.getrandbits(64)), peer_id, i)
+        debounce(lambda p, a: vk.messages.send(peer_id=p, attachment=a, random_id=random.getrandbits(64)), peer_id, audio_id)
         symbols_to_flush = len(str(success_count) + str(files_count)) + 2
         time.sleep(0.7)
 
