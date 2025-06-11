@@ -1,14 +1,21 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "vk-api",
+# ]
+# ///
 
 import os
-import random
 import sys
 import time
 
-import vk_api
+from vk_api import VkApi
 from vk_api.upload import VkUpload
+from vk_api.utils import get_random_id
+from vk_api.exceptions import Captcha
 
-ACCESS_TOKEN = ""  # Вставьте свой токен
+ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
 vk_session = vk = upload = None
 
 def send_audio(peer_id: int, files: list[str]) -> None:
@@ -22,7 +29,11 @@ def send_audio(peer_id: int, files: list[str]) -> None:
     faulty_files = []
     for i, file_path in enumerate(files):
         success_count += 1
-        print("\b" * symbols_to_flush + f"{success_count}/{files_count}]", end="", flush=True)
+        print(
+            "\b" * symbols_to_flush + f"{success_count}/{files_count}]",
+            end="",
+            flush=True,
+        )
         try:
             response = upload.audio_message(file_path)["audio_message"]
             audio_ids.append(f"doc{response['owner_id']}_{response['id']}")
@@ -39,21 +50,33 @@ def send_audio(peer_id: int, files: list[str]) -> None:
     symbols_to_flush = len(str(audios_count)) + 3
     for i, audio_id in enumerate(audio_ids):
         success_count += 1
-        print("\b" * symbols_to_flush + f"{success_count}/{files_count}]", end="", flush=True)
-        debounce(lambda p, a: vk.messages.send(peer_id=p, attachment=a, random_id=random.getrandbits(64)), peer_id, audio_id)
+        print(
+            "\b" * symbols_to_flush + f"{success_count}/{files_count}]",
+            end="",
+            flush=True,
+        )
+        debounce(
+            lambda p, a: vk.messages.send(
+                peer_id=p, attachment=a, random_id=get_random_id()
+            ),
+            peer_id,
+            audio_id,
+        )
         symbols_to_flush = len(str(success_count) + str(files_count)) + 2
         time.sleep(0.7)
 
     print()
 
+
 def debounce(f, *args) -> None:
     while True:
         try:
             f(*args)
-        except vk_api.exceptions.Captcha:
+        except Captcha:
             time.sleep(2)
             continue
         break
+
 
 def parse_args(args: list[str]) -> tuple[int, list[str]]:
     search_sequence = ""
@@ -64,11 +87,15 @@ def parse_args(args: list[str]) -> tuple[int, list[str]]:
         if get_id(arg):
             peer_id = get_id(arg)
         elif is_token(arg):
-            authorize(arg)  # Update vk and upload objects
+            authorize(arg)
         elif is_file(arg):
             files.append(arg)
         else:
             search_sequence += arg + " "
+
+    if vk is None:
+        print("ACCESS_TOKEN должен быть передан как environment переменная, либо в качестве одного из аргументов.")
+        sys.exit(1)
 
     search_sequence = search_sequence.strip()
 
@@ -82,37 +109,50 @@ def parse_args(args: list[str]) -> tuple[int, list[str]]:
 
     return peer_id, files
 
+
 def authorize(access_token: str) -> None:
     global vk_session, vk, upload
-    vk_session = vk_api.VkApi(token=access_token)
+    vk_session = VkApi(token=access_token)
     vk = vk_session.get_api()
     upload = VkUpload(vk)
 
+
 def is_token(string: str) -> bool:
-    return string.startswith("vk") # пришло время отказаться от токенов старого образца
+    return string.startswith("vk")
+
 
 def is_file(path: str) -> bool:
     return os.path.isfile(path)
+
 
 def get_id(string: str) -> int:
     if string[0] == "@":
         return int(string[1:]) + 2000000000
     return string.isnumeric() and int(string)
 
+
 def search_for_id(query: str) -> int | bool:
     query = query.lower()
-    conversations_response = vk.messages.getConversations(count=50, extended=1, fields="first_name,last_name")
+    conversations_response = vk.messages.getConversations(
+        count=50, extended=1, fields="first_name,last_name"
+    )
     profiles = conversations_response.get("profiles", [])
     groups = conversations_response.get("groups", [])
     conversations = {}
     for item in conversations_response["items"]:
         peer_type = item["conversation"]["peer"]["type"]
         peer_id = item["conversation"]["peer"]["id"]
-        conversations[peer_id] = item["conversation"]["chat_settings"]["title"].lower() if peer_type == "chat" else ""
+        conversations[peer_id] = (
+            item["conversation"]["chat_settings"]["title"].lower()
+            if peer_type == "chat"
+            else ""
+        )
 
     for profile in profiles:
         if profile["id"] in conversations:
-            conversations[profile["id"]] = (profile["first_name"] + " " + profile["last_name"]).lower()
+            conversations[profile["id"]] = (
+                profile["first_name"] + " " + profile["last_name"]
+            ).lower()
 
     for group in groups:
         if -group["id"] in conversations:
@@ -127,6 +167,7 @@ def search_for_id(query: str) -> int | bool:
         if matched:
             peer_id = id_
     return matched and peer_id
+
 
 if ACCESS_TOKEN:
     authorize(ACCESS_TOKEN)
